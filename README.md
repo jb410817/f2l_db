@@ -19,3 +19,10 @@ FDR corner rotates, then the FR edge, then each slot clockwise from the top.
 The next_id in the Solutions table points to another cases cube_id if the first
 case has multiple slots being solved for and the initial solution only solved
 one.
+
+## Milestones + Progress
+ - Task 1 (50%): Create diagrams and the database
+ - Task 2: Make Python command line interface for inserting into the database (I expect to be done with this by the midterm report)
+ - Task 3: Insert cases I know into the database
+ - Task 4: Make the Python interface able to “search” for cases based on if they contain a similarity or number of F2L slots
+ - Task 5: Work on generation of cases and solutions OR create a visualization of the cube faces (possibly using Roofpig https://github.com/larspetrus/Roofpig or generating the images with Python and then storing them in the database) 
