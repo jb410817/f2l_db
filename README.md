@@ -21,6 +21,8 @@ case can be transformed into another. Ex: case jbulxrwt = U + fculxrwt = R U R'
 
 The y, y_prime, and y2 attributes have the id of the cube when that rotation is performed. Ex: vjfixrwt = Y' + jbulxrwt
 
+The mirror attribute stores the id of the cube in the mirror position
+
 ## Milestones + Progress
  - Task 1 (100%): Create diagrams and the database
  - Task 2: Make Python command line interface for inserting into the database (I expect to be done with this by the midterm report)
