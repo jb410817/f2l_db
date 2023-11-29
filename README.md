@@ -21,7 +21,7 @@ case has multiple slots being solved for and the initial solution only solved
 one.
 
 ## Milestones + Progress
- - Task 1 (50%): Create diagrams and the database
+ - Task 1 (100%): Create diagrams and the database
  - Task 2: Make Python command line interface for inserting into the database (I expect to be done with this by the midterm report)
  - Task 3: Insert cases I know into the database
  - Task 4: Make the Python interface able to “search” for cases based on if they contain a similarity or number of F2L slots
