@@ -218,10 +218,11 @@ def insert_solution(cube_pos, solution):
 # insert a cube state into the cube_state table
 def insert_cube_state(cube_pos):
     cube_id = cube_pos
-    cube_y = rotate_cube(1, cube_pos)
-    cube_y_prime = rotate_cube(3, cube_pos)
-    cube_y2 = rotate_cube(2, cube_pos)
-    cube_mirror = mirror_cube(cube_pos)
+
+    cube_y = rotate_cube(1, cube_id)
+    cube_y_prime = rotate_cube(3, cube_id)
+    cube_y2 = rotate_cube(2, cube_id)
+    cube_mirror = mirror_cube(cube_id)
     cube_mirror_y = rotate_cube(1, cube_mirror)
     cube_mirror_y_prime = rotate_cube(3, cube_mirror)
     cube_mirror_y2 = rotate_cube(2, cube_mirror)
@@ -296,6 +297,15 @@ def print_menu():
     choice = input("Enter your choice: ")
     return choice
 
+def clean_state(state):
+    solved = "vjulxrwt"
+    cube_id = state
+    # replace placeholders with solved values
+    for i in range(0, len(cube_id)):
+        if cube_id[i] == "z" or cube_id[i] == "Z" or cube_id[i] == " ":
+            cube_id = cube_id[:i] + solved[i] + cube_id[i+1:]
+    return cube_id
+
 # Run your command line interface
 if __name__ == "__main__":
     create_tables()
@@ -304,7 +314,7 @@ if __name__ == "__main__":
     while(choice.lower() != "exit" and choice != "3"):
         choice = print_menu()
         if choice == '1':
-            cube_pos = input("Enter cube position: ")
+            cube_pos = clean_state(input("Enter cube position: "))
             solution = input("Enter solution: ")
             insert_cube_state(cube_pos)
             insert_solution(cube_pos, solution)
