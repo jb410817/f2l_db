@@ -6,15 +6,22 @@ cursor = con.cursor()
 
 # rotates the cube clockwise 90 degrees some number of times using Speffz notation
 def rotate_cube(times, state):
-    print("Rotating state (" + state + ") " + str(times) + " times...")
     # Speffz notation dictionary
-    rotate_map = {
+    corner_map = {
         "a": "b", "b": "c", "c": "d", "d": "a",
         "e": "q", "f": "r", "g": "s", "h": "t",
         "i": "e", "j": "f", "k": "g", "l": "h",
         "m": "i", "n": "j", "o": "k", "p": "l",
         "q": "m", "r": "n", "s": "o", "t": "p",
         "u": "x", "v": "u", "w": "v", "x": "w",
+    }
+    edge_map = {
+        "a": "m", "b": "i", "c": "e", "d": "q",
+        "e": "a", "f": "h", "g": "w", "h": "n",
+        "i": "d", "j": "l", "k": "x", "l": "r",
+        "m": "c", "n": "p", "o": "u", "p": "f",
+        "q": "b", "r": "t", "s": "v", "t": "j",
+        "u": "g", "v": "k", "w": "o", "x": "s",
     }
 
     aux = ""
@@ -24,10 +31,9 @@ def rotate_cube(times, state):
     for i in range(times):
         aux = ""
         # for each position, set the result to the rotated position
-        for pos in result:
-            aux += rotate_map[pos]
-        result = aux
-    print("Result: " + result)
+        for pos in range(0, len(result), 2):
+            aux += corner_map[result[pos]] + edge_map[result[(pos + 1)]]
+        result = aux[6:8] + aux[0:6]
     return result
 
 # mirrors the cube (left and right swap)
@@ -35,7 +41,7 @@ def mirror_cube(state):
     # Speffz notation mirroring arrays
     # corners and edges are mirrored separately - corner b -> corner a, edge b -> edge d
     # corners
-    corners_map = {
+    corner_map = {
         "a": "b", "b": "a", "c": "d", "d": "c",
         "e": "n", "f": "m", "g": "p", "h": "o",
         "i": "j", "j": "i", "k": "l", "l": "k",
@@ -44,7 +50,7 @@ def mirror_cube(state):
         "u": "v", "v": "u", "w": "x", "x": "w",
     }
 
-    edges_map = {
+    edge_map = {
         "a": "a", "b": "d", "c": "c", "d": "b",
         "e": "m", "f": "p", "g": "o", "h": "n",
         "i": "i", "j": "l", "k": "k", "l": "j",
@@ -59,14 +65,15 @@ def mirror_cube(state):
     for pos in range(0, len(state), 2):
         # corner first
         current = state[pos]
-        result += corners_map[current]
+        result += corner_map[current]
         
         # now edges
         pos += 1
+        pos = pos % len(edge_map)
         current = state[pos]
-        result += edges_map[current]
+        result += edge_map[current]
         
-    return result
+    return result[2:4] + result[0:2] + result[6:8] + result[4:6]
 
 # rotates the solution 90 degrees some number of times using standard FBRLUD notation
 def rotate_solution(times, solution):
@@ -154,21 +161,59 @@ def mirror_solution(solution):
 # Define your command line interface functions
 def create_tables():
     # Print the status of pragma foreign_keys
-    cursor.execute("PRAGMA foreign_keys")
-    status = cursor.fetchone()[0]
-    print("Foreign keys status: ", status)
+    cursor.execute("PRAGMA foreign_keys = ON")
 
     # Create a table in the database
-    cursor.execute("CREATE TABLE IF NOT EXISTS "
-                   "cube_state(cube_id primary key, fr_corner, fr_edge, fl_corner, fl_edge, "
-                   "bl_corner, bl_edge, br_corner, br_edge, y, y_prime, y2, mirror)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS " 
-                   "related_states(cube_id, ref, "
-                   "FOREIGN KEY (cube_id) REFERENCES cube_state(cube_id))")
-    cursor.execute("CREATE TABLE IF NOT EXISTS solutions "
-                   " (cube_id REFERENCES cube_state(cube_id), solution, solution_id primary key, move_count, next_id)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS solution_tags "
-                   "(solution_id REFERENCES solutions(solution_id), one_slot, adj_slots, diag_slots, three_slots, all_slots, weight)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS cube_state (\
+                    cube_id TEXT primary key ON CONFLICT IGNORE NOT NULL, \
+                    fr_corner text, fr_edge text, fl_corner text, fl_edge text, \
+                    bl_corner text, bl_edge text, br_corner text, br_edge text, y text, y_prime text, y2 text, mirror text)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS related_states(\
+                    cube_id text, ref text, \
+                    UNIQUE (cube_id, ref), \
+                    FOREIGN KEY (cube_id) REFERENCES cube_state(cube_id))")
+    cursor.execute("CREATE TABLE IF NOT EXISTS solutions (\
+                    cube_id text NOT NULL REFERENCES cube_state(cube_id), solution text, move_count int, weight int, \
+                    PRIMARY KEY (cube_id, solution))")
+    cursor.execute("CREATE TABLE IF NOT EXISTS cube_tags (\
+                    cube_id text NOT NULL, one_slot boolean, adj_slots boolean, diag_slots boolean, \
+                    three_slots boolean, all_slots boolean, \
+                    FOREIGN KEY (cube_id) REFERENCES cube_state(cube_id), \
+                    PRIMARY KEY (cube_id) ON CONFLICT IGNORE)")
+
+# insert a solution into the solutions table
+def insert_solution(cube_pos, solution):
+    valid_chars = ["F", "L", "B", "R", "U", "D", "X", "Y", "Z", "E", "M", "S", "f", "l", "b", "r", "u", "d", "'", " ", "2"]
+    cube_id = cube_pos
+    state_solutions = {
+        cube_id: solution,
+        rotate_cube(1, cube_id): rotate_solution(1, solution),
+        rotate_cube(2, cube_id): rotate_solution(2, solution),
+        rotate_cube(3, cube_id): rotate_solution(3, solution),
+        mirror_cube(cube_id): mirror_solution(solution),
+        rotate_cube(1, mirror_cube(cube_id)): rotate_solution(1, mirror_solution(solution)),
+        rotate_cube(2, mirror_cube(cube_id)): rotate_solution(2, mirror_solution(solution)),
+        rotate_cube(3, mirror_cube(cube_id)): rotate_solution(3, mirror_solution(solution)),
+    }
+    
+    for state, sol in state_solutions.items():
+        valid_move_check = [i for i in sol if i not in valid_chars]
+        if len(valid_move_check) > 0:
+            print("Solution " + sol + " for state " + state + " is invalid. Please check the solution and try again.")
+            continue
+        move_count = len(sol.split())
+        weight = 1
+        if sol == "":
+            sol = "SOLVED"
+        try:
+            cursor.execute("INSERT INTO solutions VALUES (?, ?, ?, ?)", (state, sol, move_count, weight))
+        except sqlite3.IntegrityError:
+            print("Solution " + sol + " is already in the database for state " + state + ". Weight increased by 1.")
+            cursor.execute("UPDATE solutions SET weight = weight + 1 WHERE cube_id = ? AND solution = ?", (state, sol))
+        except:
+            print("Error inserting solution " + sol + " for state " + state + ". Please check the solution and try again.")
+            continue
+    con.commit()
 
 # insert a cube state into the cube_state table
 def insert_cube_state(cube_pos):
@@ -180,7 +225,7 @@ def insert_cube_state(cube_pos):
     cube_mirror_y = rotate_cube(1, cube_mirror)
     cube_mirror_y_prime = rotate_cube(3, cube_mirror)
     cube_mirror_y2 = rotate_cube(2, cube_mirror)
-    cubes_list = [cube_pos, cube_y, cube_y_prime, cube_y2, cube_mirror, cube_mirror_y, cube_mirror_y_prime, cube_mirror_y2]
+    cubes_list = [cube_id, cube_y, cube_y_prime, cube_y2, cube_mirror, cube_mirror_y, cube_mirror_y_prime, cube_mirror_y2]
 
     data = []
     for cube in cubes_list:
@@ -190,9 +235,51 @@ def insert_cube_state(cube_pos):
                 rotate_cube(1, cube), rotate_cube(3, cube), rotate_cube(2, cube), mirror_cube(cube)
             )
             )
-        
-    cursor.executemany("INSERT INTO cube_state VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+    try:
+        cursor.executemany("INSERT INTO cube_state VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", data)
+    except sqlite3.IntegrityError:
+        print("At least one of the cube states already exists in the database: ") 
+        print([cube[0] for cube in data])
+    except:
+        print("Error inserting state " + [cube[0] for cube in data] + ". Please check the solution and try again.")
+    
+    # insert related states
+    for cube in cubes_list:
+        try:
+            cursor.executemany("INSERT INTO related_states VALUES (?, ?)", [(cube, other_cube) for other_cube in cubes_list if other_cube != cube])
+        except sqlite3.IntegrityError:
+            continue
+        except:
+            print("Error inserting related states for state " + cube + ". Please check the input and try again.")
+            continue
+
+    for i in cubes_list:
+        insert_cube_tags(i)
+    
     con.commit()
+
+# insert cube tags into the cube_tags table
+def insert_cube_tags(cube_pos):
+    cube_id = cube_pos
+    # vjulxrwt
+    # which states are unsolved?
+    pair1 = not(cube_id[0:2] == "vj")
+    pair2 = not(cube_id[2:4] == "ul")
+    pair3 = not(cube_id[4:6] == "xr")
+    pair4 = not(cube_id[6:8] == "wt")
+    one_slot = (pair1 + pair2 + pair3 + pair4) == 1
+    # checks if 1 and 2, 2 and 3, 3 and 4, or 4 and 1 are unsolved
+    adj_slots = (pair1 and pair2) ^ (pair2 and pair3) ^ (pair3 and pair4) ^ (pair4 and pair1)
+    diag_slots = (pair1 and pair3) ^ (pair2 and pair4)
+    three_slots = (pair1 + pair2 + pair3 + pair4) == 3
+    all_slots = (pair1 + pair2 + pair3 + pair4) == 4
+    
+    try:
+        cursor.execute("INSERT INTO cube_tags VALUES (?, ?, ?, ?, ?, ?)", (cube_id, one_slot, adj_slots, diag_slots, three_slots, all_slots))
+    except sqlite3.IntegrityError:
+        print("Cube tags for state " + cube_id + " already exist in the database.")
+    except:
+        print("Error inserting cube tags for state " + cube_id + ". Please check input and try again.")
 
 def retrieve_data():
     # Retrieve data from the table
@@ -202,7 +289,7 @@ def retrieve_data():
     print("Retrieving data...")
 
 def print_menu():
-    print("~ ~ ~ Main Menu ~ ~ ~")
+    print("\n\n~ ~ ~ Main Menu ~ ~ ~")
     print("1. Insert F2L Case")
     print("2. Retrieve Solutions")
     print("3. Exit")
@@ -210,7 +297,7 @@ def print_menu():
     return choice
 
 # Run your command line interface
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_tables()
     print ("Welcome to the F2L database!")
     choice = "CONTINUE"
@@ -220,6 +307,7 @@ if __name__ == '__main__':
             cube_pos = input("Enter cube position: ")
             solution = input("Enter solution: ")
             insert_cube_state(cube_pos)
+            insert_solution(cube_pos, solution)
         elif choice == '2':
             retrieve_data()
 
