@@ -1,4 +1,20 @@
- # f2l_db - Jakob Burkett
+# f2l_db - Jakob Burkett
+
+## Installation
+- I used python 3.10.12
+- Clone repo
+- ```pip3 install sqlite3 ```
+  - I think that's the only package requirement
+- python3 f2l_db.py
+
+## Usage
+- Currently, usage is very strict
+- Menus allow most inputs, I think
+- Cube states must use Speffz notation (8 lowercase letters a-x)
+- Solutions must use capital letters for all rotations and slice turns
+- Solutions can not use 2' moves (ex. R2') - use R2 instead. They're equivalent, don't be fancy.
+- Solution moves must have spaces between moves.
+- Breaking these "rules" may result in the program closing with an error.
 
 ## Database/Hosting Information
 - Database is currently not hosted.
