@@ -14,6 +14,7 @@ def rotate_cube(times, state):
         "m": "i", "n": "j", "o": "k", "p": "l",
         "q": "m", "r": "n", "s": "o", "t": "p",
         "u": "x", "v": "u", "w": "v", "x": "w",
+        "0": "0",
     }
     edge_map = {
         "a": "m", "b": "i", "c": "e", "d": "q",
@@ -22,6 +23,7 @@ def rotate_cube(times, state):
         "m": "c", "n": "p", "o": "u", "p": "f",
         "q": "b", "r": "t", "s": "v", "t": "j",
         "u": "g", "v": "k", "w": "o", "x": "s",
+        "0": "0",
     }
 
     aux = ""
@@ -48,6 +50,7 @@ def mirror_cube(state):
         "m": "f", "n": "e", "o": "h", "p": "g",
         "q": "r", "r": "q", "s": "t", "t": "s",
         "u": "v", "v": "u", "w": "x", "x": "w",
+        "0": "0",
     }
 
     edge_map = {
@@ -57,6 +60,7 @@ def mirror_cube(state):
         "m": "e", "n": "h", "o": "g", "p": "f",
         "q": "q", "r": "t", "s": "s", "t": "r",
         "u": "u", "v": "x", "w": "w", "x": "v",
+        "0": "0",
     }
     
     result = ""
@@ -283,11 +287,123 @@ def insert_cube_tags(cube_pos):
         print("Error inserting cube tags for state " + cube_id + ". Please check input and try again.")
 
 def retrieve_data():
-    # Retrieve data from the table
-    # cursor.execute("SELECT * FROM your_table")
-    # rows = cursor.fetchall()
-    # for row in rows:
-    print("Retrieving data...")
+    print("\n")
+    slot_1 = "__"
+    slot_2 = "__"
+    slot_3 = "__"
+    slot_4 = "__"
+    one_slot = True
+    adj_slots = False
+    diag_slots = False
+    three_slots = False
+    all_slots = False
+    # show can either be weight or move_count
+    show = "weight"
+    limit = 10
+
+    user_input = ""
+    while (user_input != "exit"):
+        # Retrieve data from the table
+        # cursor.execute("SELECT * FROM your_table")
+        # rows = cursor.fetchall()
+        # for row in rows:
+        if (show == "weight"):
+            try:
+                cursor.execute("SELECT cube_id, solution, weight \
+                                FROM solutions NATURAL JOIN cube_state NATURAL JOIN cube_tags \
+                                WHERE cube_id LIKE ? \
+                                AND (one_slot = ? OR adj_slots = ? OR diag_slots = ? OR three_slots = ? OR all_slots = ?) \
+                                GROUP BY cube_id \
+                                ORDER BY weight DESC \
+                                LIMIT ?", (slot_1 + slot_2 + slot_3 + slot_4, one_slot, adj_slots, diag_slots, three_slots, all_slots, limit))
+                rows = cursor.fetchall()
+                for row in rows:
+                    print(row)
+            except:
+                print("Error retrieving data. Please check input and try again.")
+                continue
+        elif (show == "move_count"):
+            try:
+                cursor.execute("SELECT cube_id, solution, move_count \
+                                FROM solutions NATURAL JOIN cube_state NATURAL JOIN cube_tags \
+                                WHERE cube_id LIKE ? \
+                                AND (one_slot = ? OR adj_slots = ? OR diag_slots = ? OR three_slots = ? OR all_slots = ?) \
+                                GROUP BY cube_id \
+                                ORDER BY move_count ASC \
+                                LIMIT ?", (slot_1 + slot_2 + slot_3 + slot_4, one_slot, adj_slots, diag_slots, three_slots, all_slots, limit))
+                rows = cursor.fetchall()
+                for row in rows:
+                    print(row)
+            except:
+                print("Error retrieving data. Please check input and try again.")
+                continue
+
+        print("\n\nEnter 1 to change slot 1: " + slot_1)
+        print("Enter 2 to change slot 2: " + slot_2)
+        print("Enter 3 to change slot 3: " + slot_3)
+        print("Enter 4 to change slot 4: " + slot_4)
+        print("Enter o to toggle filter for one slot cases: " + str(one_slot))
+        print("Enter a to toggle filter for adjacent slot cases only: " + str(adj_slots))
+        print("Enter d to toggle filter for diagonal slot cases only: " + str(diag_slots))
+        print("Enter t to toggle filter for three slot cases only: " + str(three_slots))
+        print("Enter f to toggle filter for all slot cases only: " + str(all_slots))
+        print("Enter l to change limit: " + str(limit))
+        print("Enter s to see all solutions for a case")
+        print("Enter w to sort by weight")
+        print("Enter m to sort by move count")
+        print("Enter r to reset all filters")
+        print("Enter exit to exit to main menu")
+        user_input = input("Enter your choice: ")
+
+        if (user_input == "1"):
+            slot_1 = input("Enter slot 1: ")
+        elif (user_input == "2"):
+            slot_2 = input("Enter slot 2: ")
+        elif (user_input == "3"):
+            slot_3 = input("Enter slot 3: ")
+        elif (user_input == "4"):
+            slot_4 = input("Enter slot 4: ")
+        elif (user_input == "o"):
+            one_slot = not one_slot
+        elif (user_input == "a"):
+            adj_slots = not adj_slots
+        elif (user_input == "d"):
+            diag_slots = not diag_slots
+        elif (user_input == "t"):
+            three_slots = not three_slots
+        elif (user_input == "f"):
+            all_slots = not all_slots
+        elif (user_input == "l"):
+            limit = int(input("Enter limit: "))
+        elif (user_input == "w"):
+            show = "weight"
+        elif (user_input == "m"):
+            show = "move_count"
+        elif (user_input == "r"):
+            slot_1 = "__"
+            slot_2 = "__"
+            slot_3 = "__"
+            slot_4 = "__"
+            one_slot = True
+            adj_slots = False
+            diag_slots = False
+            three_slots = False
+            all_slots = False
+        elif (user_input == "s"):
+            case = input("Enter case: ")
+            try:
+                cursor.execute("SELECT cube_id, solution, move_count, weight \
+                                FROM solutions NATURAL JOIN cube_state NATURAL JOIN cube_tags \
+                                WHERE cube_id LIKE ? \
+                                AND one_slot = ? AND adj_slots = ? AND diag_slots = ? AND three_slots = ? AND all_slots = ? \
+                                GROUP BY cube_id \
+                                ORDER BY weight DESC", (case, one_slot, adj_slots, diag_slots, three_slots, all_slots))
+                rows = cursor.fetchall()
+                for row in rows:
+                    print(row)
+            except:
+                print("Error retrieving data. Please check input and try again.")
+                continue
 
 def print_menu():
     print("\n\n~ ~ ~ Main Menu ~ ~ ~")
