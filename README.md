@@ -15,6 +15,7 @@
 - Solutions can not use 2' moves (ex. R2') - use R2 instead. They're equivalent, don't be fancy.
 - Solution moves must have spaces between moves.
 - Breaking these "rules" may result in the program closing with an error.
+- Use Roofpig by Lars Petrus to display solutions (https://jsfiddle.net/dc2xvsrm/63/)
 
 ## Database/Hosting Information
 - Database is currently not hosted.
