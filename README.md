@@ -4,7 +4,7 @@
 - I used python 3.10.12
 - Clone repo
 - sqlite3 should be in the standard library
-- python3 f2l_db.py
+- ```python3 f2l_db.py```
 
 ## Usage
 - Currently, usage is very strict
