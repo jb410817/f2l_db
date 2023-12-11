@@ -3,8 +3,7 @@
 ## Installation
 - I used python 3.10.12
 - Clone repo
-- ```pip3 install sqlite3 ```
-  - I think that's the only package requirement
+- sqlite3 should be in the standard library
 - python3 f2l_db.py
 
 ## Usage
